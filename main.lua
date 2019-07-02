@@ -27,7 +27,7 @@ for y=1,4 do
         table.insert( grid[y], {
             x = PADDING + WINDOW_WIDTH/4 + (x-1)*(GRID_TILE_SIZE + PADDING),
             y = PADDING + WINDOW_HEIGHT/8 + (y-1)*(GRID_TILE_SIZE + PADDING),
-            occupied = false,
+            occupied = false, tile = nil
         })
     end
 end
@@ -35,17 +35,34 @@ end
 -- moving tiles
 tiles = {}
 
-table.insert( tiles, {
-    tileX = 1, tileY = 1, x = grid[1][1].x, y = grid[1][1].y, num = 2})
+-- add mock tile
+local tile = {tileX = 1, tileY = 1, x = grid[1][1].x, y = grid[1][1].y, num = 2}
+table.insert( tiles, tile)
+grid[1][1].occupied = true
+grid[1][1].tile = tile
 
-table.insert( tiles, {
-    tileX = 2, tileY = 1, x = grid[1][2].x, y = grid[1][2].y, num = 2})
+local tile = {tileX = 2, tileY = 1, x = grid[1][2].x, y = grid[1][2].y, num = 2}
+table.insert( tiles, tile)
+grid[1][2].occupied = true
+grid[1][2].tile = tile
+
+local tile = {tileX = 1, tileY = 2, x = grid[2][1].x, y = grid[2][1].y, num = 2}
+table.insert( tiles, tile)
+grid[2][1].occupied = true
+grid[2][1].tile = tile
+
+local tile = {tileX = 2, tileY = 2, x = grid[2][2].x, y = grid[2][2].y, num = 2}
+table.insert( tiles, tile)
+grid[2][2].occupied = true
+grid[2][2].tile = tile
 
 function love.load( ... )   
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     love.window.setTitle('2048')
     font = love.graphics.newFont(64*3/4)
     love.graphics.setFont(font)
+
+    canMove = true
 end
 
 function love.keypressed( key )
@@ -53,46 +70,20 @@ function love.keypressed( key )
         love.event.quit()
     end
 
-    -- move the tiles
-    if key == 'up' then
-        for k, tile in pairs(tiles) do
-            tile.tileY = getRightmostOpenX(tile.tileX, tile.tileY, 1)
-            
-            grid[tile.tileY][tile.tileX].occupied = true
-            Timer.tween(0.1, {
-                [tile] = {x = grid[tile.tileY][tile.tileX].x,
-                            y = grid[tile.tileY][tile.tileX].y}
-            })
-        end
-    elseif key == 'down' then
-        for k, tile in pairs(tiles) do
-            tile.tileY = getBottommostOpenX(tile.tileX, tile.tileY, 4)
+    if canMove then
+        -- move the tiles
+        if key == 'up' then
+            moveUp()
 
-            grid[tile.tileY][tile.tileX].occupied = true
-            Timer.tween(0.1, {
-                [tile] = {x = grid[tile.tileY][tile.tileX].x,
-                            y = grid[tile.tileY][tile.tileX].y}
-            })
-        end    
-    elseif key == 'left' then
-        for k, tile in pairs(tiles) do
-            tile.tileX = getLeftmostOpenX(tile.tileX, tile.tileY, 1)
+        elseif key == 'down' then
+            moveDown()
 
-            grid[tile.tileY][tile.tileX].occupied = true
-            Timer.tween(0.1, {
-                [tile] = {x = grid[tile.tileY][tile.tileX].x,
-                            y = grid[tile.tileY][tile.tileX].y}
-            })
-        end
-    elseif key == 'right' then
-        for k, tile in pairs(tiles) do
-            tile.tileX = getRightmostOpenX(tile.tileX, tile.tileY, 4)
-            
-            grid[tile.tileY][tile.tileX].occupied = true
-            Timer.tween(0.1, {
-                [tile] = {x = grid[tile.tileY][tile.tileX].x,
-                            y = grid[tile.tileY][tile.tileX].y}
-            })
+        elseif key == 'left' then
+            moveLeft()
+
+        elseif key == 'right' then
+            moveRight()
+
         end
     end
 end
@@ -104,7 +95,7 @@ end
 function getRightmostOpenX( startX, startY, finish )
     for x = startX + 1, finish do
         if grid[startY][x].occupied then
-            return x
+            return x-1
         end
     end
 
@@ -114,31 +105,159 @@ end
 function getLeftmostOpenX( startX, startY, finish )
     for x = startX - 1, finish, -1 do
         if grid[startY][x].occupied then
-            return x
+            return x + 1
         end
     end
 
     return finish
 end
 
-function getTopmostOpenX( startX, startY, finish )
+function getTopmostOpenY( startY, startX, finish)
     for y = startY - 1, finish, -1 do
         if grid[y][startX].occupied then
-            return y
+            return y + 1
         end
     end
 
     return finish
 end
 
-function getBottommostOpenX( startX, startY, finish )
+function getBottommostOpenY( startY, startX, finish)
     for y = startY + 1, finish do
         if grid[y][startX].occupied then
-            return y
+            return y - 1
         end
     end
 
     return finish
+end
+
+function moveUp( ... )
+    -- iterate column by column over the grid from top to bottom
+    for x=1,4 do
+        for y=1,4 do
+            local tile = grid[y][x].tile
+
+            -- only move tile in it exists
+            if tile then
+                local farthestY = getTopmostOpenY(y, x, 1)
+                
+                if farthestY ~= y then
+                    canMove = false
+                    local oldY = tile.tileY
+                    
+                    tile.tileY = farthestY
+                    grid[tile.tileY][x].tile = tile
+                    grid[tile.tileY][x].occupied = true
+                    grid[oldY][x].tile = nil
+                    grid[oldY][x].occupied = false
+                
+                    Timer.tween(0.1, {
+                        [tile] = {x = grid[tile.tileY][tile.tileX].x,
+                                    y = grid[tile.tileY][tile.tileX].y}
+                    }):finish(function()
+                        canMove = true
+                    end)
+                end    
+            end
+        end
+    end
+end
+
+function moveDown( ... )    
+    -- iterate column by column over the grid from bottom to top
+    for x=1,4 do
+        for y=4,1,-1 do
+            local tile = grid[y][x].tile
+
+            -- only move tile in it exists
+            if tile then
+                local farthestY = getBottommostOpenY(y, x, 4)
+                
+                if farthestY ~= y then
+                    canMove = false
+                    local oldY = tile.tileY
+                    
+                    tile.tileY = farthestY
+                    grid[tile.tileY][x].tile = tile
+                    grid[tile.tileY][x].occupied = true
+                    grid[oldY][x].tile = nil
+                    grid[oldY][x].occupied = false
+                
+                    Timer.tween(0.1, {
+                        [tile] = {x = grid[tile.tileY][tile.tileX].x,
+                                    y = grid[tile.tileY][tile.tileX].y}
+                    }):finish(function()
+                        canMove = true
+                    end)
+                end    
+            end
+        end
+    end   
+end
+
+function moveLeft( ... )        
+    -- iterate row by row over the grid left to right
+    for y=1,4 do
+        for x=1,4 do
+            local tile = grid[y][x].tile
+
+            -- only move tile in it exists
+            if tile then                
+                local farthestX = getLeftmostOpenX(x, y, 1)
+                
+                if farthestX ~= x then
+                    canMove = false
+                    local oldX = tile.tileX
+                    
+                    tile.tileX = farthestX                    
+                    grid[y][tile.tileX].tile = tile
+                    grid[y][tile.tileX].occupied = true
+                    grid[y][oldX].tile = nil
+                    grid[y][oldX].occupied = false
+                
+                    Timer.tween(0.1, {
+                        [tile] = {x = grid[tile.tileY][tile.tileX].x,
+                                    y = grid[tile.tileY][tile.tileX].y}
+                    }):finish(function()
+                        canMove = true
+                    end)
+                end    
+            end
+        end
+    end
+end
+
+function moveRight( ... )        
+    -- iterate row by row over the grid right to left
+    for y=1,4 do
+        for x=4,1,-1 do
+            local tile = grid[y][x].tile            
+
+            -- only move tile in it exists
+            if tile then                               
+                local farthestX = getRightmostOpenX(x, y, 4)
+                
+                if farthestX ~= x then
+                    canMove = false 
+                    local oldX = tile.tileX
+                    
+                    tile.tileX = farthestX                    
+                    grid[y][tile.tileX].tile = tile
+                    grid[y][tile.tileX].occupied = true
+                    grid[y][oldX].tile = nil
+                    grid[y][oldX].occupied = false
+                
+                    Timer.tween(0.1, {
+                        [tile] = {x = grid[tile.tileY][tile.tileX].x,
+                                    y = grid[tile.tileY][tile.tileX].y}
+                    }):finish(function()
+                        canMove = true
+                    end)
+                end                                
+            end
+        end
+    end 
 end
 
 function love.draw( ... )

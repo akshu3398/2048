@@ -8,7 +8,8 @@ require("src/dependencies")
 function love.load( ... )   
     love.window.setMode(WINDOW_WIDTH, WINDOW_HEIGHT)
     love.window.setTitle('2048')
-    font = love.graphics.newFont(64*3/4)
+    font = love.graphics.newFont((GRID_TILE_SIZE/2)*3/4)
+    gameOverFont = love.graphics.newFont((GRID_TILE_SIZE/2)*3*3/4)
     love.graphics.setFont(font)
 
     -- enable or disable movement depending on tile movement
@@ -17,8 +18,8 @@ function love.load( ... )
     -- initialize grid
     grid = Grid()
 
-    -- moving tiles table
-    -- tiles = Tile()
+    gameOver = false
+    win = false
 end
 
 function love.keypressed( key )
@@ -26,20 +27,44 @@ function love.keypressed( key )
         love.event.quit()
     end
 
-    if canMove then
+    if canMove and not gameOver then
         -- move the tiles
         if key == 'up' then
             moveUp()
             grid:spawnTile()
+            if grid:calculateLoss() then
+                gameOver = true
+            elseif grid:calculateWin() then
+                gameOver = true
+                win = true
+            end
         elseif key == 'down' then
             moveDown()
             grid:spawnTile()
+            if grid:calculateLoss() then
+                gameOver = true
+            elseif grid:calculateWin() then
+                gameOver = true
+                win = true
+            end
         elseif key == 'left' then
             moveLeft()
             grid:spawnTile()
+            if grid:calculateLoss() then
+                gameOver = true
+            elseif grid:calculateWin() then
+                gameOver = true
+                win = true
+            end
         elseif key == 'right' then
             moveRight()
             grid:spawnTile()
+            if grid:calculateLoss() then
+                gameOver = true
+            elseif grid:calculateWin() then
+                gameOver = true
+                win = true
+            end
         end
     end
 end
@@ -211,4 +236,19 @@ function love.draw( ... )
     love.graphics.clear(250/255, 250/255, 238/255, 1)
 
     grid:render()
+
+    if gameOver then
+        local text = 'Game Over!'
+
+        if win then
+            text = 'You Win!'
+            love.graphics.setColor(12/255, 255/255, 50/255, 1)
+        else
+            love.graphics.setColor(255/255, 50/255, 12/255, 1)
+        end
+        love.graphics.setFont(gameOverFont)
+        love.graphics.printf(text, 0, WINDOW_HEIGHT/2 - (gameOverFont:getHeight()/2), WINDOW_WIDTH, 'center')
+        love.graphics.setFont(font)
+        love.graphics.setColor(1, 1, 1, 1)
+    end
 end

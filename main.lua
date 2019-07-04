@@ -18,7 +18,7 @@ function love.load( ... )
     grid = Grid()
 
     -- moving tiles table
-    tiles = Tile()
+    -- tiles = Tile()
 end
 
 function love.keypressed( key )
@@ -60,52 +60,19 @@ function moveUp( ... )
                 -- grab farthest open tile we can move to                
                 local farthestY = grid:getTopmostOpenY(x, y, 1)
                 
-                -- if the tile we are moving to isn't same
-                if farthestY ~= y then
-                    
-                    -- combine like numbers
-                    -- only allow if we are not at right edge
-                    if farthestY > 1 then
-                        local farthestTile = grid:getTile(x, farthestY - 1)
-                        if farthestTile.num == tile.num then
-                            canMove = false 
-                            local oldY = tile.tileY
-                            
-                            tile.tileY = farthestY - 1
-                            grid:clearTile(x, oldY)
+                -- check the tile beyond for same number and merge it                               f so
+                if farthestY - 1 >= 1 then
+                    local farthestTile = grid:getTile(x, farthestY - 1)
 
-                            Timer.tween(0.1, {
-                                [tile] = {x = grid.grid[tile.tileY][tile.tileX].x,
-                                            y = grid.grid[tile.tileY][tile.tileX].y}
-                            }):finish(function()
-                                canMove = true
-                                grid:getTile(tile.tileX, tile.tileY).num = tile.num * 2
-                                tile.remove = true
-                                grid:removeDeletedTiles()
-                            end)
-
-                            -- skip non-combinational movement brlow
-                            goto continue
-                        end
+                    if farthestTile.num == tile.num then
+                        makeMerge(tile, x, tile.tileY, x, farthestY - 1)
+                    elseif farthestY ~= y then
+                        makeMove(tile, x, tile.tileY, x, farthestY)
                     end
-                    
-                    -- just move over as normal if not combining terms
-                    canMove = false
-                    local oldY = tile.tileY
-                    
-                    tile.tileY = farthestY
-                    grid:setTile(x, tile.tileY, tile)
-                    grid:clearTile(x, oldY)
-                
-                    Timer.tween(0.1, {
-                        [tile] = {x = grid.grid[tile.tileY][tile.tileX].x, 
-                                  y = grid.grid[tile.tileY][tile.tileX].y}
-                    }):finish(function()
-                        canMove = true
-                    end)
-                    
-                    ::continue::
-                end                                
+                -- otherwise make an ordinary move
+                else
+                    makeMove(tile, x, tile.tileY, x, farthestY)
+                end
             end
         end
     end
@@ -123,51 +90,18 @@ function moveDown( ... )
                 -- grab farthest open tile we can move to                
                 local farthestY = grid:getBottommostOpenY(x, y, 4)
                 
-                -- if the tile we are moving to isn't same
-                if farthestY ~= y then
-                    
-                    -- combine like numbers
-                    -- only allow if we are not at right edge
-                    if farthestY < 4 then
-                        local farthestTile = grid:getTile(x, farthestY + 1)
-                        if farthestTile.num == tile.num then
-                            canMove = false 
-                            local oldY = tile.tileY
-                            
-                            tile.tileY = farthestY + 1
-                            grid:clearTile(x, oldY)
+                -- check the tile beyond for same number and merge it                               f so
+                if farthestY + 1 <= 4 then
+                    local farthestTile = grid:getTile(x, farthestY + 1)
 
-                            Timer.tween(0.1, {
-                                [tile] = {x = grid.grid[tile.tileY][tile.tileX].x,
-                                            y = grid.grid[tile.tileY][tile.tileX].y}
-                            }):finish(function()
-                                canMove = true
-                                grid:getTile(tile.tileX, tile.tileY).num = tile.num * 2
-                                tile.remove = true
-                                grid:removeDeletedTiles()
-                            end)
-
-                            -- skip non-combinational movement brlow
-                            goto continue
-                        end
+                    if farthestTile.num == tile.num then
+                        makeMerge(tile, x, tile.tileY, x, farthestY + 1)
+                    elseif farthestY ~= y then
+                        makeMove(tile, x, tile.tileY, x, farthestY)
                     end
-                    
-                    -- just move over as normal if not combining terms
-                    canMove = false
-                    local oldY = tile.tileY
-                    
-                    tile.tileY = farthestY
-                    grid:setTile(x, tile.tileY, tile)
-                    grid:clearTile(x, oldY)
-                
-                    Timer.tween(0.1, {
-                        [tile] = {x = grid.grid[tile.tileY][tile.tileX].x, 
-                                  y = grid.grid[tile.tileY][tile.tileX].y}
-                    }):finish(function()
-                        canMove = true
-                    end)
-                    
-                    ::continue::
+                -- otherwise make an ordinary move
+                else
+                    makeMove(tile, x, tile.tileY, x, farthestY)
                 end                                
             end
         end
@@ -186,51 +120,18 @@ function moveLeft( ... )
                 -- grab farthest open tile we can move to                
                 local farthestX = grid:getLeftmostOpenX(x, y, 1)
                 
-                -- if the tile we are moving to isn't same
-                if farthestX ~= x then
-                    
-                    -- combine like numbers
-                    -- only allow if we are not at right edge
-                    if farthestX > 1 then
-                        local farthestTile = grid:getTile(farthestX - 1, y)
-                        if farthestTile.num == tile.num then
-                            canMove = false 
-                            local oldX = tile.tileX
-                            
-                            tile.tileX = farthestX - 1
-                            grid:clearTile(oldX, y)
+                -- check the tile beyond for same number and merge it                               f so
+                if farthestX - 1 >= 1 then
+                    local farthestTile = grid:getTile(farthestX - 1, y)
 
-                            Timer.tween(0.1, {
-                                [tile] = {x = grid.grid[tile.tileY][tile.tileX].x,
-                                            y = grid.grid[tile.tileY][tile.tileX].y}
-                            }):finish(function()
-                                canMove = true
-                                grid:getTile(tile.tileX, tile.tileY).num = tile.num * 2
-                                tile.remove = true
-                                grid:removeDeletedTiles()
-                            end)
-
-                            -- skip non-combinational movement brlow
-                            goto continue
-                        end
+                    if farthestTile.num == tile.num then
+                        makeMerge(tile, tile.tileX, y, farthestX - 1, y)
+                    elseif farthestX ~= x then
+                        makeMove(tile, tile.tileX, y, farthestX, y)
                     end
-                    
-                    -- just move over as normal if not combining terms
-                    canMove = false
-                    local oldX = tile.tileX
-                    
-                    tile.tileX = farthestX     
-                    grid:setTile(tile.tileX, y, tile)
-                    grid:clearTile(oldX, y)
-                
-                    Timer.tween(0.1, {
-                        [tile] = {x = grid.grid[tile.tileY][tile.tileX].x, 
-                                  y = grid.grid[tile.tileY][tile.tileX].y}
-                    }):finish(function()
-                        canMove = true
-                    end)
-                    
-                    ::continue::
+                -- otherwise make an ordinary move
+                else
+                    makeMove(tile, tile.tileX, y, farthestX, y)
                 end                                
             end
         end
@@ -249,55 +150,61 @@ function moveRight( ... )
                 -- grab farthest open tile we can move to                
                 local farthestX = grid:getRightmostOpenX(x, y, 4)
                 
-                -- if the tile we are moving to isn't same
-                if farthestX ~= x then
-                    
-                    -- combine like numbers
-                    -- only allow if we are not at right edge
-                    if farthestX < 4 then
-                        local farthestTile = grid:getTile(farthestX + 1, y)
-                        if farthestTile.num == tile.num then
-                            canMove = false 
-                            local oldX = tile.tileX
-                            
-                            tile.tileX = farthestX + 1
-                            grid:clearTile(oldX, y)
+                -- check the tile beyond for same number and merge it                               f so
+                if farthestX + 1 <= 4 then
+                    local farthestTile = grid:getTile(farthestX + 1, y)
 
-                            Timer.tween(0.1, {
-                                [tile] = {x = grid.grid[tile.tileY][tile.tileX].x,
-                                            y = grid.grid[tile.tileY][tile.tileX].y}
-                            }):finish(function()
-                                canMove = true
-                                grid:getTile(tile.tileX, tile.tileY).num = tile.num * 2
-                                tile.remove = true
-                                grid:removeDeletedTiles()
-                            end)
-
-                            -- skip non-combinational movement brlow
-                            goto continue
-                        end
+                    if farthestTile.num == tile.num then
+                        makeMerge(tile, tile.tileX, y, farthestX + 1, y)
+                    elseif farthestX ~= x then
+                        makeMove(tile, tile.tileX, y, farthestX, y)
                     end
-                    
-                    -- just move over as normal if not combining terms
-                    canMove = false
-                    local oldX = tile.tileX
-                    
-                    tile.tileX = farthestX               
-                    grid:setTile(tile.tileX, y, tile)
-                    grid:clearTile(oldX, y)
-                
-                    Timer.tween(0.1, {
-                        [tile] = {x = grid.grid[tile.tileY][tile.tileX].x, 
-                                  y = grid.grid[tile.tileY][tile.tileX].y}
-                    }):finish(function()
-                        canMove = true
-                    end)
-                    
-                    ::continue::
-                end                                
+                -- otherwise make an ordinary move
+                else
+                    makeMove(tile, tile.tileX, y, farthestX, y)
+                end
             end
         end
     end 
+end
+
+function moveTween( tile )
+    Timer.tween(0.1, {
+        [tile] = {x = grid.grid[tile.tileY][tile.tileX].x, 
+                  y = grid.grid[tile.tileY][tile.tileX].y}
+    }):finish(function()
+        canMove = true
+    end)
+end
+
+function mergeTween( tile )
+    grid:getTile(tile.tileX, tile.tileY).num = tile.num * 2
+    Timer.tween(0.1, {
+        [tile] = {x = grid.grid[tile.tileY][tile.tileX].x,
+                    y = grid.grid[tile.tileY][tile.tileX].y}
+    }):finish(function()
+        canMove = true
+        grid:getTile(tile.tileX, tile.tileY).displayNum = grid:getTile(tile.tileX, tile.tileY).num
+        tile.remove = true
+        grid:removeDeletedTiles()
+    end)
+end
+
+function makeMerge( tile, oldX, oldY, newX, newY )
+    canMove = false
+    tile.tileX, tile.tileY = newX, newY
+    grid:clearTile(oldX, oldY)
+    mergeTween(tile)
+end
+
+function makeMove( tile, oldX, oldY, newX, newY )
+    canMove = false
+
+    tile.tileX, tile.tileY = newX, newY
+    grid:setTile(newX, newY, tile)
+    grid:clearTile(oldX, oldY)
+
+    moveTween(tile)
 end
 
 function love.draw( ... )

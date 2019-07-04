@@ -19,7 +19,14 @@ function Grid:init( ... )
 end
 
 function Grid:spawnTile( ... )
-    -- body
+    if #self.tiles < 16 then
+        local x, y = math.random( 4 ), math.random( 4 )
+        while self.grid[y][x].tile do
+            x, y = math.random( 4 ), math.random( 4 )
+        end
+
+        self:createTile(x, y)
+    end
 end
 
 function Grid:removeDeletedTiles( ... )
